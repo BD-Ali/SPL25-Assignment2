@@ -56,7 +56,13 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      * it throws IllegalStateException.
      */
     public void newTask(Runnable task) {
-       // TODO
+       if (task == null) throw new IllegalArgumentException("task is null");
+
+       // Non-blocking requirement: if queue is full, reject
+       boolean ok = handoff.offer(task);
+       if (!ok) {
+            throw new IllegalStateException("Worker " + id + " is not ready to accept a task");
+        }
     }
 
     /**
@@ -64,17 +70,56 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      * Inserts a poison pill so the worker wakes up and exits.
      */
     public void shutdown() {
-       // TODO
+        alive.set(false);
+        // Insert poison pill to wake up the thread if it's waiting
+        handoff.offer(POISON_PILL);
     }
 
     @Override
     public void run() {
-       // TODO
+        while (alive.get()) {
+            try {
+                // Wait for task
+                Runnable task = handoff.take();
+
+                // Poison pill => exit
+                if (task == POISON_PILL) {
+                    break;
+                }
+
+                // Mark transition IDLE -> BUSY
+                busy.set(true);
+                long now = System.nanoTime();
+
+                // accumulate idle time since last idle start
+                long idleStart = idleStartTime.get();
+                if (idleStart != 0) {
+                    timeIdle.addAndGet(Math.max(0L, now - idleStart));
+                }
+
+                // Execute + measure timeUsed
+                long start = System.nanoTime();
+                try {
+                    task.run();
+                } finally {
+                    long end = System.nanoTime();
+                    timeUsed.addAndGet(Math.max(0L, end - start));
+                    busy.set(false);
+                    idleStartTime.set(System.nanoTime());
+                }
+
+            } catch (InterruptedException e) {
+                // Exit if interrupted during shutdown; otherwise keep interrupt status and loop
+                if (!alive.get()) break;
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     @Override
     public int compareTo(TiredThread o) {
-        // TODO
-        return 0;
+        int cmp = Double.compare(this.getFatigue(), o.getFatigue());
+        if (cmp != 0) return cmp;
+        return Integer.compare(this.id, o.id);
     }
 }

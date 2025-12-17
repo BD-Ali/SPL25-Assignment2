@@ -14,15 +14,15 @@ public class SharedVector {
 
 
     public SharedVector(double[] vector, VectorOrientation orientation) {
-        // TODO: store vector data and its orientation
+        // Store vector data and its orientation
         if (vector == null) throw new IllegalArgumentException("vector is null");
         if (orientation == null) throw new IllegalArgumentException("orientation is null");
-        this.vector = vector;
+        this.vector = vector.clone();
         this.orientation = orientation;
     }
 
     public double get(int index) {
-        // TODO: return element at index (read-locked)
+        // Return element at index (read-locked)
         readLock();
         try {
             return vector[index];
@@ -32,7 +32,7 @@ public class SharedVector {
     }
 
     public int length() {
-        // TODO: return vector length
+        // Return vector length (read-locked)
         readLock();
         try {
             return vector.length;
@@ -42,7 +42,7 @@ public class SharedVector {
     }
 
     public VectorOrientation getOrientation() {
-        // TODO: return vector orientation
+        // Return vector orientation (read-locked)
         readLock();
         try {
             return orientation;
@@ -52,30 +52,29 @@ public class SharedVector {
     }
 
     public void writeLock() {
-        // TODO: acquire write lock
+        // Acquire write lock
         lock.writeLock().lock();
     }
 
     public void writeUnlock() {
-        // TODO: release write lock
+        // Release write lock
         lock.writeLock().unlock();
     }
 
     public void readLock() {
-        // TODO: acquire read lock
+        // Acquire read lock
         lock.readLock().lock();
 
     }
 
     public void readUnlock() {
-        // TODO: release read lock
+        // Release read lock
         lock.readLock().unlock();
     }
 
     public void transpose() {
-        // TODO: transpose vector
-        // “Transpose” at vector level means: row <-> column metadata flip
-        // Numeric array stays the same.
+        // Transpose vector - flip orientation between ROW_MAJOR and COLUMN_MAJOR
+        // Numeric array stays the same
         writeLock();
         try {
             if (orientation == VectorOrientation.ROW_MAJOR) {
@@ -89,7 +88,8 @@ public class SharedVector {
     }
 
     public void add(SharedVector other) {
-        // TODO: add two vectors
+        // Add two vectors element-wise (this = this + other)
+        // Requires same length and orientation
         if (other == null) throw new IllegalArgumentException("other is null");
         if (this.length() != other.length())
             throw new IllegalArgumentException("Vector length mismatch");
@@ -99,13 +99,13 @@ public class SharedVector {
             for (int i = 0; i < vector.length; i++) vector[i] += other.vector[i];
         } finally {
             unlockOrdered(this, true, other, false);
-}
+        }
 
         
     }
 
     public void negate() {
-        // TODO: negate vector
+        // Negate vector - multiply all elements by -1
         writeLock();
         try {
             for (int i = 0; i < vector.length; i++) {
@@ -117,7 +117,8 @@ public class SharedVector {
     }
 
     public double dot(SharedVector other) {
-        // TODO: compute dot product (row · column)
+        // Compute dot product (row · column)
+        // Requires this to be ROW_MAJOR and other to be COLUMN_MAJOR
         if (other == null) throw new IllegalArgumentException("other is null");
         if (this.length() != other.length())
             throw new IllegalArgumentException("Vector length mismatch");
@@ -133,8 +134,8 @@ public class SharedVector {
     }
 
     public void vecMatMul(SharedMatrix matrix) {
-        // TODO: compute row-vector × matrix
-        // Computes: (this row-vector) × matrix  -> stores result back into THIS vector
+        // Compute row-vector × matrix
+        // Multiplies this (as row vector) by matrix, stores result back into this
         if (matrix == null) throw new IllegalArgumentException("matrix is null");
         if (this.orientation != VectorOrientation.ROW_MAJOR)
             throw new IllegalStateException("vecMatMul expects this to be ROW_MAJOR");
