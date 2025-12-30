@@ -15,7 +15,7 @@ import java.util.concurrent.locks.ReadWriteLock;
  * - All read operations acquire read locks
  * - All write operations acquire write locks  
  * - Multi-vector operations use consistent lock ordering to prevent deadlock
- * - Special handling for self-operations (e.g., v.add(v)) to avoid self-deadlock
+ * - Special handling for self-operations (v.add(v)) to avoid self-deadlock
  * 
  * Lock Ordering:
  * - When locking multiple vectors, uses System.identityHashCode() for ordering
