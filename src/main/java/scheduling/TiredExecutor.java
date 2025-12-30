@@ -101,13 +101,13 @@ public class TiredExecutor {
             }
         };
         
-        // CRITICAL: Increment BEFORE submission to prevent race condition
+        // Increment BEFORE submission to prevent race condition
         // where task completes before increment, causing inFlight to go negative
         inFlight.incrementAndGet();
         try {
             worker.newTask(wrapped);
         } catch (IllegalStateException e) {
-            // newTask failed (e.g., worker shut down) - revert and cleanup
+            // newTask failed (worker shut down) - revert and cleanup
             inFlight.decrementAndGet();
             idleMinHeap.add(worker);
             throw e;
