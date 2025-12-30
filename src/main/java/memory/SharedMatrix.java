@@ -21,8 +21,7 @@ package memory;
  */
 public class SharedMatrix {
 
-    // Volatile ensures visibility of array reference across threads
-    private volatile SharedVector[] vectors = {};
+    private volatile SharedVector[] vectors = {}; // underlying vectors
 
     /**
      * Creates an empty matrix with row-major orientation.
