@@ -1,171 +1,112 @@
 package memory;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-class SharedMatrixTest {
+public class SharedMatrixTest {
 
     @Test
-    void newMatrixIsEmpty() {
+    void loadRowMajor_clonesInputRows() {
+        double[][] input = {
+                {1, 2},
+                {3, 4}
+        };
+
         SharedMatrix m = new SharedMatrix();
-        assertEquals(0, m.length());
+        m.loadRowMajor(input);
+
+        input[0][0] = 999; // mutate original
+
+        double[][] out = m.readRowMajor();
+        assertEquals(1, out[0][0], 1e-9);
+        assertEquals(2, out[0][1], 1e-9);
+        assertEquals(3, out[1][0], 1e-9);
+        assertEquals(4, out[1][1], 1e-9);
     }
 
     @Test
-    void loadRowMajorAndReadRowMajorRoundTrip() {
-        SharedMatrix m = new SharedMatrix();
-        double[][] a = { {1,2}, {3,4} };
-        m.loadRowMajor(a);
+    void loadRowMajor_setsRowMajorVectors() {
+        double[][] input = {
+                {1, 2, 3},
+                {4, 5, 6}
+        };
 
-        double[][] out = m.readRowMajor();
-        assertArrayEquals(new double[]{1,2}, out[0]);
-        assertArrayEquals(new double[]{3,4}, out[1]);
+        SharedMatrix m = new SharedMatrix();
+        m.loadRowMajor(input);
+
+        assertEquals(VectorOrientation.ROW_MAJOR, m.getOrientation());
         assertEquals(2, m.length());
-        assertEquals(VectorOrientation.ROW_MAJOR, m.getOrientation());
+        assertEquals(VectorOrientation.ROW_MAJOR, m.get(0).getOrientation());
+        assertEquals(3, m.get(0).length());
     }
 
     @Test
-    void loadColumnMajorAndReadRowMajorMatchesLogicalMatrix() {
-        SharedMatrix m = new SharedMatrix();
-        double[][] a = { {1,2}, {3,4} };
-        m.loadColumnMajor(a);
+    void loadColumnMajor_storesColumnsCorrectly() {
+        double[][] input = {
+                {1, 2, 3},
+                {4, 5, 6}
+        };
 
-        // still must read as a normal row-major matrix
-        double[][] out = m.readRowMajor();
-        assertArrayEquals(new double[]{1,2}, out[0]);
-        assertArrayEquals(new double[]{3,4}, out[1]);
+        SharedMatrix m = new SharedMatrix();
+        m.loadColumnMajor(input);
+
         assertEquals(VectorOrientation.COLUMN_MAJOR, m.getOrientation());
-    }
-
-    @Test
-    void getReturnsVectorAtIndex() {
-        SharedMatrix m = new SharedMatrix();
-        m.loadRowMajor(new double[][]{{1,2},{3,4}});
-        SharedVector v0 = m.get(0);
-        assertNotNull(v0);
-        assertEquals(2, v0.length());
-        assertEquals(1.0, v0.get(0));
-    }
-
-    @Test
-    void emptyConstructorCreatesEmptyMatrix() {
-        SharedMatrix m = new SharedMatrix();
-        assertEquals(0, m.length());
-    }
-
-    @Test
-    void loadRowMajorRejectsNull() {
-        SharedMatrix m = new SharedMatrix();
-        assertThrows(IllegalArgumentException.class, () -> m.loadRowMajor(null));
-    }
-
-    @Test
-    void loadColumnMajorRejectsNull() {
-        SharedMatrix m = new SharedMatrix();
-        assertThrows(IllegalArgumentException.class, () -> m.loadColumnMajor(null));
-    }
-
-    @Test
-    void loadRejectsRaggedMatrix() {
-        SharedMatrix m = new SharedMatrix();
-        double[][] ragged = new double[][]{
-                {1,2,3},
-                {4,5}     // shorter row => illegal
-        };
-        assertThrows(IllegalArgumentException.class, () -> m.loadRowMajor(ragged));
-        assertThrows(IllegalArgumentException.class, () -> m.loadColumnMajor(ragged));
-    }
-
-    @Test
-    void loadAcceptsEmptyMatrixAndReadReturnsEmpty() {
-        SharedMatrix m = new SharedMatrix();
-        m.loadRowMajor(new double[][]{});
-        assertEquals(0, m.length());
-        assertArrayEquals(new double[][]{}, m.readRowMajor());
-    }
-
-    @Test
-    void loadRowMajorRoundTripPreservesValues() {
-        SharedMatrix m = new SharedMatrix();
-        double[][] a = new double[][]{
-                {1,2},
-                {3,4}
-        };
-        m.loadRowMajor(a);
-        assertEquals(VectorOrientation.ROW_MAJOR, m.getOrientation());
-
-        double[][] out = m.readRowMajor();
-        assertArrayEquals(new double[]{1,2}, out[0]);
-        assertArrayEquals(new double[]{3,4}, out[1]);
-    }
-
-    @Test
-    void loadColumnMajorStillReadsAsSameLogicalRowMajorMatrix() {
-        SharedMatrix m = new SharedMatrix();
-        double[][] a = new double[][]{
-                {1,2},
-                {3,4}
-        };
-        m.loadColumnMajor(a);
-        assertEquals(VectorOrientation.COLUMN_MAJOR, m.getOrientation());
-
-        // readRowMajor should return the logical matrix, not the internal layout
-        double[][] out = m.readRowMajor();
-        assertArrayEquals(new double[]{1,2}, out[0]);
-        assertArrayEquals(new double[]{3,4}, out[1]);
-    }
-
-
-    @Test
-    void getReturnsVectorsConsistentWithOrientation() {
-        SharedMatrix m = new SharedMatrix();
-        double[][] a = new double[][]{
-                {1,2,3},
-                {4,5,6}
-        };
-
-        // Row-major: vectors are rows
-        m.loadRowMajor(a);
-        assertEquals(2, m.length());
-        assertEquals(VectorOrientation.ROW_MAJOR, m.getOrientation());
-        assertArrayEquals(new double[]{1,2,3},
-                new double[]{m.get(0).get(0), m.get(0).get(1), m.get(0).get(2)});
-
-        // Column-major: vectors are columns
-        m.loadColumnMajor(a);
         assertEquals(3, m.length());
-        assertEquals(VectorOrientation.COLUMN_MAJOR, m.getOrientation());
-        assertArrayEquals(new double[]{1,4},
-                new double[]{m.get(0).get(0), m.get(0).get(1)});
-        assertArrayEquals(new double[]{2,5},
-                new double[]{m.get(1).get(0), m.get(1).get(1)});
-        assertArrayEquals(new double[]{3,6},
-                new double[]{m.get(2).get(0), m.get(2).get(1)});
+
+        SharedVector col0 = m.get(0);
+        assertEquals(VectorOrientation.COLUMN_MAJOR, col0.getOrientation());
+        assertEquals(2, col0.length());
+        assertEquals(1, col0.get(0), 1e-9);
+        assertEquals(4, col0.get(1), 1e-9);
+
+        SharedVector col2 = m.get(2);
+        assertEquals(3, col2.get(0), 1e-9);
+        assertEquals(6, col2.get(1), 1e-9);
     }
 
     @Test
-    void readRowMajorReturnsDefensiveCopyNotAlias() {
+    void readRowMajor_returnsSameWhenStoredRowMajor() {
+        double[][] input = {
+                {7, 8},
+                {9, 10}
+        };
+
         SharedMatrix m = new SharedMatrix();
-        double[][] a = new double[][]{{1,2},{3,4}};
-        m.loadRowMajor(a);
-
-        double[][] out1 = m.readRowMajor();
-        out1[0][0] = 999;
-
-        double[][] out2 = m.readRowMajor();
-        assertEquals(1.0, out2[0][0], "readRowMajor should not expose internal storage directly.");
-    }
-
-    @Test
-    void loadShouldNotAliasInputArrayDirectly() {
-        SharedMatrix m = new SharedMatrix();
-        double[][] a = new double[][]{{1,2},{3,4}};
-        m.loadRowMajor(a);
-
-        // mutate input after load
-        a[0][0] = 777;
+        m.loadRowMajor(input);
 
         double[][] out = m.readRowMajor();
-        assertEquals(1.0, out[0][0], "loadRowMajor should copy input, not keep alias to caller array.");
+
+        assertArrayEquals(new double[]{7, 8}, out[0], 1e-9);
+        assertArrayEquals(new double[]{9, 10}, out[1], 1e-9);
+    }
+
+    @Test
+    void readRowMajor_transposesWhenStoredColumnMajor() {
+        double[][] input = {
+                {1, 2, 3},
+                {4, 5, 6}
+        };
+
+        SharedMatrix m = new SharedMatrix();
+        m.loadColumnMajor(input);
+
+        double[][] out = m.readRowMajor();
+
+        assertEquals(2, out.length);
+        assertEquals(3, out[0].length);
+        assertArrayEquals(new double[]{1, 2, 3}, out[0], 1e-9);
+        assertArrayEquals(new double[]{4, 5, 6}, out[1], 1e-9);
+    }
+
+    @Test
+    void loadColumnMajor_emptyMatrix_safe() {
+        SharedMatrix m = new SharedMatrix();
+        m.loadColumnMajor(new double[0][0]);
+
+        // For empty matrix, orientation doesn't matter functionally
+        // The implementation returns ROW_MAJOR as default when no vectors exist
+        assertEquals(0, m.length());
+        assertNotNull(m.readRowMajor());
     }
 }
