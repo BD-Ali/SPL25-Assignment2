@@ -1,14 +1,5 @@
 # SPL Assignment 2 - Linear Algebra Engine (LAE)
 
-**Submission Date:** December 31, 2025
-
-## Student Information
-
-- **Student 1:** Ali Badarne, ID: 326107687
-- **Student 2:** Najwan Drawshe, ID: 215191297
-
----
-
 ## Overview
 
 The **Linear Algebra Engine (LAE)** is a multi-threaded Java application that evaluates linear algebra computations expressed as JSON-based expression trees. It supports matrix operations including addition, multiplication, negation, and transposition, with parallel execution using a custom thread pool with fatigue-based scheduling.
