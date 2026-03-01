@@ -1,61 +1,67 @@
-# Linear Algebra Engine (LAE)
+# SPL Assignment 2 - Linear Algebra Engine (LAE)
 
-A multi-threaded Linear Algebra Engine that performs matrix computations using a custom thread pool with fatigue-based scheduling. This project demonstrates advanced concurrency control, thread synchronization, and efficient parallel task execution.
+**Submission Date:** December 31, 2025
+
+## Student Information
+
+- **Student 1:** Ali Badarne, ID: 326107687
+- **Student 2:** Najwan Drawshe, ID: 215191297
+
+---
 
 ## Overview
 
-The LAE parses JSON-formatted mathematical expressions involving matrices and evaluates them using parallel computation. It breaks down operations into vector-level tasks distributed across worker threads, with intelligent workload balancing based on thread fatigue.
+The **Linear Algebra Engine (LAE)** is a multi-threaded Java application that evaluates linear algebra computations expressed as JSON-based expression trees. It supports matrix operations including addition, multiplication, negation, and transposition, with parallel execution using a custom thread pool with fatigue-based scheduling.
 
 ## Features
 
-- **Supported Operations:**
-  - Matrix Addition (`+`)
-  - Matrix Multiplication (`*`)
-  - Matrix Negation (`-`)
-  - Matrix Transpose (`T`)
+- **Matrix Operations**: Addition (`+`), Multiplication (`*`), Negation (`-`), Transpose (`T`)
+- **Parallel Execution**: Custom thread pool with configurable worker threads
+- **Fatigue-Based Scheduling**: Workers are assigned tasks based on their current fatigue level (least tired worker gets the next task)
+- **Thread-Safe Memory**: Shared matrix and vector structures with proper locking mechanisms
+- **JSON I/O**: Input computations and output results in JSON format
+- **Robust Error Handling**: All errors are captured and written to the output file
 
-- **Concurrency Features:**
-  - Custom thread pool with fatigue-based scheduling
-  - Fine-grained locking using `ReadWriteLock` on vectors
-  - Deadlock prevention through consistent lock ordering
-  - Thread-safe shared memory management
-
-- **Performance Optimization:**
-  - Vector-level task granularity for maximum parallelism
-  - Least-fatigued-first scheduling for fair work distribution
-  - Row-major and column-major storage for efficient operations
-
-## Requirements
-
-- **Java:** 21 or compatible version
-- **Maven:** 3.x or higher
-- **OS:** Linux, macOS, or Windows with bash support
+---
 
 ## Project Structure
 
 ```
-/workspace
-├── src/
-│   ├── main/java/
-│   │   ├── memory/
-│   │   │   ├── SharedMatrix.java      # Thread-safe matrix storage
-│   │   │   ├── SharedVector.java      # Thread-safe vector with ReadWriteLock
-│   │   │   └── VectorOrientation.java # ROW_MAJOR / COLUMN_MAJOR enum
-│   │   ├── parser/
-│   │   │   ├── ComputationNode.java   # Computation tree node
-│   │   │   ├── InputParser.java       # JSON parser
-│   │   │   └── OutputWriter.java      # JSON writer
-│   │   ├── scheduling/
-│   │   │   ├── TiredExecutor.java     # Thread pool with fatigue scheduling
-│   │   │   └── TiredThread.java       # Worker thread with fatigue tracking
-│   │   └── spl/lae/
-│   │       ├── Main.java              # Application entry point
-│   │       └── LinearAlgebraEngine.java # Computation orchestrator
-│   └── test/java/                     # Unit tests
-├── Examples/                          # Example input/output files
-├── pom.xml                           # Maven configuration
-└── README.md
+├── pom.xml                          # Maven build configuration
+├── README.md                        # This file
+├── Examples/                        # Sample input/output JSON files
+│   ├── example.json ... example6.json   # Input computation trees
+│   └── out.json ... out6.json           # Expected output results
+├── scripts/
+│   └── run_examples_and_compare.sh  # Test script to run examples
+└── src/
+    ├── main/java/
+    │   ├── spl/lae/
+    │   │   ├── Main.java                # Application entry point
+    │   │   └── LinearAlgebraEngine.java # Core computation orchestrator
+    │   ├── parser/
+    │   │   ├── InputParser.java         # JSON input parser
+    │   │   ├── OutputWriter.java        # JSON output writer
+    │   │   ├── ComputationNode.java     # Expression tree node
+    │   │   └── ComputationNodeType.java # Node type enum
+    │   ├── memory/
+    │   │   ├── SharedMatrix.java        # Thread-safe matrix storage
+    │   │   ├── SharedVector.java        # Thread-safe vector with R/W locks
+    │   │   └── VectorOrientation.java   # Row/column major enum
+    │   └── scheduling/
+    │       ├── TiredExecutor.java       # Thread pool with fatigue scheduling
+    │       └── TiredThread.java         # Worker thread with fatigue tracking
+    └── test/java/                       # JUnit 5 test classes
 ```
+
+---
+
+## Requirements
+
+- **Java 21** or later
+- **Maven 3.6+** (for building)
+
+---
 
 ## Building the Project
 
@@ -66,251 +72,224 @@ mvn compile
 # Run tests
 mvn test
 
-# Package as JAR
+# Package as JAR (creates shaded JAR with all dependencies)
 mvn package
 ```
 
-The compiled JAR will be located at: `target/lga-1.0.jar`
+---
 
-## Running the Application
+## Usage
 
-### Basic Usage
-
-```bash
-java -jar target/lga-1.0.jar <numThreads> <inputFile> <outputFile>
-```
-
-### Parameters
-
-1. **numThreads**: Number of worker threads (must be positive integer)
-2. **inputFile**: Path to input JSON file
-3. **outputFile**: Path to output JSON file
-
-### Examples
+### Running the Application
 
 ```bash
-# Run with 4 threads
-java -jar target/lga-1.0.jar 4 Examples/example1.json output.json
-
-# Run with 10 threads
-java -jar target/lga-1.0.jar 10 Examples/example2.json result.json
+java -jar target/lga-1.0.jar <threads> <input.json> <output.json>
 ```
 
-### Using Maven exec
+**Arguments:**
+| Argument | Description |
+|----------|-------------|
+| `threads` | Number of worker threads (positive integer) |
+| `input.json` | Path to input JSON file with computation tree |
+| `output.json` | Path to output JSON file for results |
+
+### Example
 
 ```bash
-mvn exec:java -Dexec.mainClass="spl.lae.Main" -Dexec.args="4 Examples/example1.json output.json"
+java -jar target/lga-1.0.jar 4 Examples/example1.json result.json
 ```
+
+---
 
 ## Input Format
 
-Input files are JSON documents with nested operations:
+The input is a JSON file representing a computation tree. Nodes can be:
 
+### Matrix (Leaf Node)
+A 2D array of numbers:
+```json
+[
+  [1, 2, 3],
+  [4, 5, 6]
+]
+```
+
+### Operation Node
+An object with `operator` and `operands`:
 ```json
 {
   "operator": "+",
   "operands": [
-    [
-      [1, 2],
-      [3, 4]
-    ],
-    [
-      [5, 6],
-      [7, 8]
-    ]
+    [[1, 2], [3, 4]],
+    [[5, 6], [7, 8]]
   ]
 }
 ```
 
-### Nested Operations
+### Supported Operators
 
+| Operator | Description | Operands |
+|----------|-------------|----------|
+| `+` | Matrix Addition | 2+ matrices (same dimensions) |
+| `*` | Matrix Multiplication | 2+ matrices (compatible dimensions) |
+| `-` | Matrix Negation | 1 matrix |
+| `T` | Matrix Transpose | 1 matrix |
+
+### Example Input (Nested Operations)
 ```json
 {
-  "operator": "*",
+  "operator": "+",
   "operands": [
     {
-      "operator": "+",
+      "operator": "*",
       "operands": [
-        [[1, 2], [3, 4]],
-        [[5, 6], [7, 8]]
+        [[1, 2, 3], [4, 5, 6]],
+        {
+          "operator": "-",
+          "operands": [
+            [[7, 8], [9, 10], [11, 12]]
+          ]
+        }
       ]
     },
-    [[2, 0], [0, 2]]
+    [[13, 14], [15, 16]],
+    {
+      "operator": "T",
+      "operands": [
+        [[17, 18], [19, 20]]
+      ]
+    }
   ]
 }
 ```
-
-## Output Format
-
-### Success
-
-```json
-{
-  "result": [
-    [6, 8],
-    [10, 12]
-  ]
-}
-```
-
-### Error
-
-```json
-{
-  "error": "Matrix dimension mismatch for MULTIPLY"
-}
-```
-
-## Implementation Details
-
-### Thread Safety
-
-- **SharedVector:** Uses `ReentrantReadWriteLock` for all operations
-  - Multiple concurrent readers allowed
-  - Exclusive write access
-  - Consistent lock ordering to prevent deadlocks
-
-- **SharedMatrix:** No internal locking (per assignment requirements)
-  - Relies on SharedVector locks for thread safety
-  - Uses `volatile` for visibility of vector array reference
-  - Atomic reference assignment for safe publication
-
-### Scheduling Algorithm
-
-1. **TiredExecutor** maintains a `PriorityBlockingQueue` of idle workers
-2. Workers ordered by fatigue (least-fatigued first)
-3. Each task assigned to the least-fatigued available worker
-4. Worker fatigue = `fatigueFactor × timeUsed`
-5. Automatic rebalancing as workers complete tasks
-
-### Concurrency Primitives
-
-- **Monitor-based synchronization:** `synchronized`, `wait()`, `notifyAll()`
-- **ReadWriteLock:** Fine-grained vector-level locking
-- **Atomic operations:** `AtomicInteger`, `AtomicLong`, `AtomicBoolean`
-- **Volatile:** Memory visibility for shared state
-
-## Testing
-
-```bash
-# Run all unit tests
-mvn test
-
-# Run specific test class
-mvn test -Dtest=SharedVectorTest
-
-# Run with verbose output
-mvn test -X
-```
-
-### Test Coverage
-
-- ✅ SharedVector operations (add, negate, dot product, transpose)
-- ✅ SharedMatrix storage and retrieval
-- ✅ TiredThread fatigue tracking
-- ✅ TiredExecutor task distribution
-- ✅ LinearAlgebraEngine computation flow
-- ✅ End-to-end integration tests
-
-### Example Validation Script
-
-```bash
-./scripts/run_examples_and_compare.sh
-```
-
-This script runs all examples and compares outputs against expected results.
-
-## Performance Considerations
-
-### Optimization Strategies
-
-1. **Task Granularity:** Operations decomposed at vector level (rows/columns)
-2. **Lock Ordering:** Consistent ordering by `System.identityHashCode()` prevents deadlocks
-3. **Read-Write Separation:** Multiple readers can access vectors simultaneously
-4. **Column-Major Storage:** Matrix multiplication uses column-major format for efficient dot products
-5. **Fatigue Balancing:** Naturally distributes work across threads over time
-
-### Scalability
-
-- Linear speedup expected for large matrices with sufficient parallelism
-- Overhead minimal for small matrices (< 10x10)
-- Optimal thread count: typically `numCPUCores` to `2 × numCPUCores`
-
-## Error Handling
-
-The application handles all errors gracefully:
-
-- **Invalid arguments:** Usage message written to error.json
-- **Dimension mismatches:** Error written to output file
-- **Parse errors:** Exception message written to output file
-- **Runtime exceptions:** Caught and reported in JSON format
-
-No crashes or unhandled exceptions occur.
-
-## Assignment Compliance
-
-This implementation satisfies all requirements:
-
-- ✅ SharedMatrix uses no synchronization primitives
-- ✅ SharedVector uses `ReentrantReadWriteLock` exclusively
-- ✅ Thread pool uses only monitor primitives (synchronized/wait/notify)
-- ✅ Fatigue-based scheduling with PriorityBlockingQueue
-- ✅ All operations write results to leftMatrix (M1)
-- ✅ Proper error handling with JSON output format
-- ✅ Left-associative nesting for n-ary operations
-- ✅ Dimension validation before all operations
-- ✅ Comprehensive unit test coverage
-
-## Known Limitations
-
-- Empty matrices default to ROW_MAJOR orientation
-- No support for scalar operations (scalar × matrix)
-- Error messages may vary in format depending on exception type
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"Number of threads must be positive"**
-   - Ensure first argument is a positive integer
-
-2. **"Matrix dimension mismatch"**
-   - Check that matrix dimensions are compatible for the operation
-   - Addition: both matrices must have same dimensions
-   - Multiplication: left columns must equal right rows
-
-3. **Tests failing**
-   - Ensure Java 21 is installed: `java -version`
-   - Clean and rebuild: `mvn clean compile test`
-
-4. **OutOfMemoryError**
-   - Reduce number of threads or matrix size
-   - Increase JVM heap: `java -Xmx2g -jar target/lga-1.0.jar ...`
-
-## Development
-
-### Adding New Operations
-
-1. Add operator to `ComputationNodeType` enum
-2. Update `ComputationNode.mapOperator()` parser
-3. Implement task creation in `LinearAlgebraEngine.createXXXTasks()`
-4. Add validation in `loadAndCompute()`
-5. Write unit tests
-
-### Running in Debug Mode
-
-```bash
-mvn exec:java -Dexec.mainClass="spl.lae.Main" -Dexec.args="4 input.json output.json" -Dexec.classpathScope=compile
-```
-
-## License
-
-This project is an academic assignment for the Systems Programming Laboratory course at Ben-Gurion University, 2026-1.
-
-## Author
-
-Ali Badarne
 
 ---
 
-**Last Updated:** December 31, 2025
+## Output Format
+
+### Successful Result
+```json
+{
+  "result": [
+    [1.0, 2.0, 3.0],
+    [4.0, 5.0, 6.0]
+  ]
+}
+```
+
+### Error Result
+```json
+{
+  "error": "Matrix dimension mismatch for ADD"
+}
+```
+
+---
+
+## Architecture
+
+### Core Components
+
+#### 1. LinearAlgebraEngine
+The main orchestrator that:
+- Parses the computation tree from input
+- Converts n-ary operations to binary using left-associative nesting (e.g., `A+B+C` → `(A+B)+C`)
+- Iteratively finds and resolves the deepest resolvable node
+- Coordinates parallel task execution through the thread pool
+
+#### 2. TiredExecutor (Thread Pool)
+A custom thread pool with fatigue-based scheduling:
+- Maintains a priority queue of workers ordered by fatigue (min-heap)
+- Always assigns tasks to the least fatigued worker
+- Workers accumulate fatigue based on execution time
+- Supports blocking until all submitted tasks complete
+
+#### 3. TiredThread (Worker)
+Individual worker threads that:
+- Track their own fatigue level: `fatigue = fatigueFactor × timeUsed`
+- Have random fatigue factors (0.5 to 1.5) for varied work distribution
+- Use a poison pill pattern for graceful shutdown
+
+#### 4. SharedMatrix & SharedVector
+Thread-safe data structures:
+- `SharedMatrix`: Stores vectors in row-major or column-major format
+- `SharedVector`: Uses `ReentrantReadWriteLock` for concurrent access
+- Lock ordering prevents deadlocks in multi-vector operations
+
+### Parallel Execution Strategy
+
+Each matrix operation is decomposed into row-level tasks:
+
+| Operation | Parallelization |
+|-----------|-----------------|
+| **Add** | Each task adds one row from matrix B to matrix A |
+| **Multiply** | Each task computes one row of the result via row × matrix |
+| **Negate** | Each task negates one row |
+| **Transpose** | Each task reads one column, writes one row of result |
+
+---
+
+## Running Examples
+
+A test script is provided to run all examples and compare outputs:
+
+```bash
+./scripts/run_examples_and_compare.sh [threads]
+```
+
+This script:
+1. Compiles the project (if Maven is available)
+2. Runs each `Examples/example*.json` file
+3. Compares outputs with expected `Examples/out*.json` files
+4. Reports matches and differences
+
+---
+
+## Testing
+
+The project includes comprehensive JUnit 5 tests:
+
+```bash
+# Run all tests
+mvn test
+
+# Run a specific test class
+mvn test -Dtest=LinearAlgebraEngineTest
+```
+
+### Test Coverage
+- `SharedMatrixTest` - Matrix loading and reading
+- `SharedVectorTest` - Vector operations and thread safety
+- `TiredExecutorTest` - Thread pool behavior
+- `TiredThreadTest` - Worker thread functionality
+- `LinearAlgebraEngineTest` - Core engine operations
+- `MainTest` - End-to-end application tests
+
+---
+
+## Error Handling
+
+The application handles errors gracefully:
+
+- **Invalid Arguments**: Writes usage message to `error.json`
+- **Invalid Thread Count**: Writes error to output file
+- **Parse Errors**: Invalid JSON or structure errors
+- **Dimension Mismatch**: Matrix operations with incompatible dimensions
+- **All Other Exceptions**: Captured and written to output file
+
+The application never crashes without producing output.
+
+---
+
+## Dependencies
+
+| Dependency | Version | Purpose |
+|------------|---------|---------|
+| Jackson Databind | 2.17.1 | JSON parsing and serialization |
+| JUnit Jupiter | 5.10.2 | Unit testing (test scope) |
+
+---
+
+## License
+
+This project was developed as part of the Systems Programming Lab course assignment.
